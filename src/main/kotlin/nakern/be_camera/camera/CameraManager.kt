@@ -1,5 +1,6 @@
 package nakern.be_camera.camera
 
+import nakern.be_camera.camera.path.CameraPathManager
 import net.minecraft.client.MinecraftClient
 import net.minecraft.util.math.Vec2f
 import net.minecraft.util.math.Vec3d
@@ -20,6 +21,7 @@ object CameraManager {
     private var lastPlayerRotation: Vec2f? = null;
     private var lastMsFade = System.currentTimeMillis();
     private var fadeData: CameraFadeOptions? = null;
+    private var playerEffectsEnabled: Boolean = true;
 
     /**
      * Clears the current camera state. Does not affect fades.
@@ -28,13 +30,20 @@ object CameraManager {
         active = false;
         cameraData = null;
         oldData = null;
+        playerEffectsEnabled = true;
     }
+
+    fun setPlayerEffects(enabled: Boolean) {
+        playerEffectsEnabled = enabled
+    }
+
+    fun isPlayerEffectsEnabled(): Boolean = playerEffectsEnabled
 
     /**
      * Tells whether camera was set to a different state or not.
      */
     fun isCameraChanged(): Boolean {
-        return active;
+        return active || CameraPathManager.isActive()
     }
 
     /**
@@ -49,6 +58,10 @@ object CameraManager {
      * Priority: targetLocation > rotation > default (0, 0).
      */
     fun getRotation(): Vector2d {
+        if (CameraPathManager.isActive()) {
+            val rot = CameraPathManager.getRotation()
+            return Vector2d(rot.x.toDouble(), rot.y.toDouble())
+        }
         if (cameraData == null) return Vector2d(0.0, 0.0)
 
         // Determine target rotation from targetLocation or direct rotation
@@ -86,6 +99,7 @@ object CameraManager {
      * Gets current position/location of the camera. This accounts for easing.
      */
     fun getPosition(): Vec3d {
+        if (CameraPathManager.isActive()) return CameraPathManager.getPosition()
         if (cameraData != null) {
             val delta = System.currentTimeMillis() - lastMs;
 //            lastMs = System.currentTimeMillis();
@@ -209,7 +223,9 @@ object CameraManager {
         location = null
         lastPlayerLocation = null
         lastPlayerRotation = null
+        playerEffectsEnabled = true
         CameraShakeManager.reset()
         CameraPresetManager.clear()
+        CameraPathManager.reset()
     }
 }
