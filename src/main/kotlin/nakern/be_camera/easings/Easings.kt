@@ -204,4 +204,81 @@ object Easings {
             else -> (2f.pow(-20 * x + 10) * sin((20 * x - 11.125) * c5)) / 2 + 1
         }).toFloat()
     }
+
+    fun spring(x: Float): Float {
+        return (1.0 - cos(x * PI * 4) * exp(-x * 6.0)).toFloat()
+    }
+
+    fun easeInBounce(x: Float): Float {
+        return 1f - easeOutBounce(1f - x)
+    }
+
+    fun easeOutBounce(x: Float): Float {
+        val n1 = 7.5625f
+        val d1 = 2.75f
+        return when {
+            x < 1f / d1 -> n1 * x * x
+            x < 2f / d1 -> { val t = x - 1.5f / d1; n1 * t * t + 0.75f }
+            x < 2.5f / d1 -> { val t = x - 2.25f / d1; n1 * t * t + 0.9375f }
+            else -> { val t = x - 2.625f / d1; n1 * t * t + 0.984375f }
+        }
+    }
+
+    fun easeInOutBounce(x: Float): Float {
+        return if (x < 0.5f) {
+            (1f - easeOutBounce(1f - 2f * x)) / 2f
+        } else {
+            (1f + easeOutBounce(2f * x - 1f)) / 2f
+        }
+    }
+
+    /**
+     * Lookup easing function by Bedrock EasingType ordinal.
+     *
+     * Bedrock order: linear(0), spring(1), in_quad(2), out_quad(3), in_out_quad(4),
+     * in_cubic(5), out_cubic(6), in_out_cubic(7), in_quart(8), out_quart(9), in_out_quart(10),
+     * in_quint(11), out_quint(12), in_out_quint(13), in_sine(14), out_sine(15), in_out_sine(16),
+     * in_expo(17), out_expo(18), in_out_expo(19), in_circ(20), out_circ(21), in_out_circ(22),
+     * in_bounce(23), out_bounce(24), in_out_bounce(25), in_back(26), out_back(27), in_out_back(28),
+     * in_elastic(29), out_elastic(30), in_out_elastic(31)
+     */
+    @JvmStatic
+    fun byBedrockOrdinal(ordinal: Int): EasingFn {
+        return BEDROCK_EASINGS.getOrElse(ordinal) { Easings::linear }
+    }
+
+    private val BEDROCK_EASINGS: Array<EasingFn> = arrayOf(
+        Easings::linear,            // 0
+        Easings::spring,            // 1
+        Easings::easeInQuad,        // 2
+        Easings::easeOutQuad,       // 3
+        Easings::easeInOutQuad,     // 4
+        Easings::easeInCubic,       // 5
+        Easings::easeOutCubic,      // 6
+        Easings::easeInOutCubic,    // 7
+        Easings::easeInQuart,       // 8
+        Easings::easeOutQuart,      // 9
+        Easings::easeInOutQuart,    // 10
+        Easings::easeInQuint,       // 11
+        Easings::easeOutQuint,      // 12
+        Easings::easeInOutQuint,    // 13
+        Easings::easeInSine,        // 14
+        Easings::easeOutSine,       // 15
+        Easings::easeInOutSine,     // 16
+        Easings::easeInExpo,        // 17
+        Easings::easeOutExpo,       // 18
+        Easings::easeInOutExpo,     // 19
+        Easings::easeInCirc,        // 20
+        Easings::easeOutCirc,       // 21
+        Easings::easeInOutCirc,     // 22
+        Easings::easeInBounce,      // 23
+        Easings::easeOutBounce,     // 24
+        Easings::easeInOutBounce,   // 25
+        Easings::easeInBack,        // 26
+        Easings::easeOutBack,       // 27
+        Easings::easeInOutBack,     // 28
+        Easings::easeInElastic,     // 29
+        Easings::easeOutElastic,    // 30
+        Easings::easeInOutElastic,  // 31
+    )
 }

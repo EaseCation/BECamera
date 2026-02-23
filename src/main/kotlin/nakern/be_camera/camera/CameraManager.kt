@@ -1,6 +1,5 @@
 package nakern.be_camera.camera
 
-import kotlinx.datetime.Clock
 import net.minecraft.client.MinecraftClient
 import net.minecraft.util.math.Vec2f
 import net.minecraft.util.math.Vec3d
@@ -14,12 +13,12 @@ object CameraManager {
     private var active = false;
     private var cameraData: CameraData? = null;
     private var oldData: CameraData? = null;
-    private var lastMs = Clock.System.now().toEpochMilliseconds();
+    private var lastMs = System.currentTimeMillis();
     private val client = MinecraftClient.getInstance();
     private var lastPlayerLocation: Vec3d? = null;
     private var location: Vec3d? = null;
     private var lastPlayerRotation: Vec2f? = null;
-    private var lastMsFade = Clock.System.now().toEpochMilliseconds();
+    private var lastMsFade = System.currentTimeMillis();
     private var fadeData: CameraFadeOptions? = null;
 
     /**
@@ -47,70 +46,49 @@ object CameraManager {
 
     /**
      * Gets current rotation of the camera. This accounts for easing.
+     * Priority: targetLocation > rotation > default (0, 0).
      */
     fun getRotation(): Vector2d {
-        if (cameraData != null) {
-            if (cameraData!!.targetLocation != null) {
-                val data = cameraData!!;
-                val dx = data.targetLocation!!.x - data.location.x;
-                val dy = data.targetLocation.y - data.location.y;
-                val dz = data.targetLocation.z - data.location.z;
-                val dXZ = sqrt(dx.pow(2) + dz.pow(2));
+        if (cameraData == null) return Vector2d(0.0, 0.0)
 
-                val pitch = -Math.toDegrees(atan2(
-                    dy,
-                    dXZ
-                ));
-                val yaw = -Math.toDegrees(
-                    atan2(
-                        dx,
-                        dz
-                    )
-                );
-
-                if (cameraData!!.easeOptions != null) {
-                    val delta = Clock.System.now().toEpochMilliseconds() - lastMs;
-
-                    val percentage = min(delta.toFloat() / cameraData!!.easeOptions!!.duration.toFloat(), 1f);
-
-                    val res = cameraData!!.easeOptions!!.easing.invoke(percentage);
-
-                    val oldRot = if (oldData?.targetLocation != null) {
-                        calcRotation(
-                            oldData!!.location,
-                            oldData!!.targetLocation!!
-                        )
-                    } else {
-                        Vector2d(lastPlayerRotation!!.x.toDouble(), lastPlayerRotation!!.y.toDouble())
-                    }
-
-                    val newRot = Vector2d(pitch, yaw);
-                    var rotDelta = newRot.sub(oldRot);
-
-                    if (rotDelta.y > 180) rotDelta = Vector2d(rotDelta.x, rotDelta.y - 360)
-                    if (rotDelta.y < -180) rotDelta = Vector2d(rotDelta.x, rotDelta.y + 360)
-
-                    val fRot = oldRot.add(rotDelta.mul(res.toDouble()))
-
-                    return fRot;
-                }
-
-//                MinecraftClient.getInstance().player!!.sendMessage(Text.literal("$pitch $yaw"), false)
-                return Vector2d(pitch, yaw);
-            } else {
-                return Vector2d(0.0, 0.0)
+        // Determine target rotation from targetLocation or direct rotation
+        val targetRot: Vector2d = when {
+            cameraData!!.targetLocation != null -> {
+                calcRotation(cameraData!!.location, cameraData!!.targetLocation!!)
             }
-        } else {
-            return Vector2d(0.0, 0.0)
+            cameraData!!.rotation != null -> {
+                Vector2d(cameraData!!.rotation!!.x.toDouble(), cameraData!!.rotation!!.y.toDouble())
+            }
+            else -> return Vector2d(0.0, 0.0)
         }
+
+        if (cameraData!!.easeOptions == null) return targetRot
+
+        val delta = System.currentTimeMillis() - lastMs
+        val percentage = min(delta.toFloat() / cameraData!!.easeOptions!!.duration.toFloat(), 1f)
+        val res = cameraData!!.easeOptions!!.easing.invoke(percentage)
+
+        // Determine old rotation from previous state
+        val oldRot: Vector2d = when {
+            oldData?.targetLocation != null -> calcRotation(oldData!!.location, oldData!!.targetLocation!!)
+            oldData?.rotation != null -> Vector2d(oldData!!.rotation!!.x.toDouble(), oldData!!.rotation!!.y.toDouble())
+            lastPlayerRotation != null -> Vector2d(lastPlayerRotation!!.x.toDouble(), lastPlayerRotation!!.y.toDouble())
+            else -> Vector2d(0.0, 0.0)
+        }
+
+        var rotDelta = targetRot.sub(oldRot, Vector2d())
+        if (rotDelta.y > 180) rotDelta = Vector2d(rotDelta.x, rotDelta.y - 360)
+        if (rotDelta.y < -180) rotDelta = Vector2d(rotDelta.x, rotDelta.y + 360)
+
+        return oldRot.add(rotDelta.mul(res.toDouble(), Vector2d()), Vector2d())
     }
     /**
      * Gets current position/location of the camera. This accounts for easing.
      */
     fun getPosition(): Vec3d {
         if (cameraData != null) {
-            val delta = Clock.System.now().toEpochMilliseconds() - lastMs;
-//            lastMs = Clock.System.now().toEpochMilliseconds();
+            val delta = System.currentTimeMillis() - lastMs;
+//            lastMs = System.currentTimeMillis();
 
             if (cameraData!!.easeOptions != null) {
                 val percentage = min((delta.toFloat() / cameraData!!.easeOptions!!.duration.toFloat()), 1f);
@@ -144,7 +122,7 @@ object CameraManager {
     fun setCamera(data: CameraData) {
         oldData = cameraData;
         cameraData = data;
-        lastMs = Clock.System.now().toEpochMilliseconds();
+        lastMs = System.currentTimeMillis();
         lastPlayerLocation = client.player!!.eyePos;
         lastPlayerRotation = client.player!!.rotationClient;
         active = true;
@@ -189,7 +167,7 @@ object CameraManager {
 
         val data = fadeData!!;
 
-        val curr = Clock.System.now().toEpochMilliseconds();
+        val curr = System.currentTimeMillis();
 
 //        GameRenderer
 
@@ -219,6 +197,19 @@ object CameraManager {
      */
     fun fade(fadeData: CameraFadeOptions) {
         this.fadeData = fadeData;
-        lastMsFade = Clock.System.now().toEpochMilliseconds();
+        lastMsFade = System.currentTimeMillis();
+    }
+
+    /**
+     * Resets all camera state including fade and shake. Call on disconnect.
+     */
+    fun resetAll() {
+        clear()
+        fadeData = null
+        location = null
+        lastPlayerLocation = null
+        lastPlayerRotation = null
+        CameraShakeManager.reset()
+        CameraPresetManager.clear()
     }
 }

@@ -5,44 +5,35 @@
 	"name": "NaKeR's Bedrock Camera Lib",
 	"description": "Adds camera APIs similar to Bedrock's Script API ones.",
 	"authors": [
-		"NaKeR"
+		"NaKeR",
+		"EaseCation"
 	],
 	"contact": {
-		"homepage": "https://github.com/NaKeRNarolino/BECamera",
-		"sources": "https://github.com/NaKeRNarolino/BECamera"
+		"homepage": "https://github.com/EaseCation/BECamera",
+		"sources": "https://github.com/EaseCation/BECamera"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/bedrockcameralib/icon.png",
 	"environment": "client",
 	"entrypoints": {
-		"main": [
-			{
-				"value": "nakern.be_camera.BedrockCameraLib",
-				"adapter": "kotlin"
-			}
-		],
 		"client": [
 			{
-				"value": "nakern.be_camera.BedrockCameraLibClient",
+				"value": "nakern.be_camera.BedrockCameraLib",
 				"adapter": "kotlin"
 			}
 		]
 	},
 	"mixins": [
-		"bedrockcameralib.mixins.json",
 		{
-			"config": "bedrockcameralib.client.mixins.json",
+			"config": "bedrockcameralib.mixins.json",
 			"environment": "client"
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.16.10",
-		"minecraft": "~1.20.1",
-		"java": ">=17",
+		"fabricloader": ">=0.18.0",
+		"minecraft": "${minecraft_dep}",
+		"java": ">=21",
 		"fabric-api": "*",
 		"fabric-language-kotlin": "*"
-	},
-	"suggests": {
-		"another-mod": "*"
 	}
 }

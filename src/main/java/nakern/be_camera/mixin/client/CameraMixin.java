@@ -29,7 +29,11 @@ public class CameraMixin {
 
     @Shadow @Final private Quaternionf rotation;
 
-    @Inject(at = @At("HEAD"), method = "getPos", cancellable = true)
+    //? if >=1.21.6 {
+    @Inject(at = @At("HEAD"), method = "getCameraPos", cancellable = true)
+    //?} else {
+    /*@Inject(at = @At("HEAD"), method = "getPos", cancellable = true)
+    *///?}
     void beCamera$getPosition(CallbackInfoReturnable<Vec3d> cir) {
         if (CameraManager.INSTANCE.isCameraChanged()) {
             cir.setReturnValue(
