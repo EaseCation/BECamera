@@ -49,10 +49,10 @@ public class CameraMixin {
             var pitch = ((float) rot.x);
             this.pitch = pitch;
             this.yaw = yaw;
-            this.rotation.rotationYXZ(-yaw * ((float)Math.PI / 180F), pitch * ((float)Math.PI / 180F), 0.0F);
-            this.horizontalPlane.set(0.0F, 0.0F, 1.0F).rotate(this.rotation);
+            this.rotation.rotationYXZ((float)Math.PI - yaw * ((float)Math.PI / 180F), -pitch * ((float)Math.PI / 180F), 0.0F);
+            this.horizontalPlane.set(0.0F, 0.0F, -1.0F).rotate(this.rotation);
             this.verticalPlane.set(0.0F, 1.0F, 0.0F).rotate(this.rotation);
-            this.diagonalPlane.set(1.0F, 0.0F, 0.0F).rotate(this.rotation);
+            this.diagonalPlane.set(-1.0F, 0.0F, 0.0F).rotate(this.rotation);
             ci.cancel();
         }
     }
@@ -60,7 +60,7 @@ public class CameraMixin {
     @Inject(at = @At("HEAD"), method = "isThirdPerson", cancellable = true)
     void beCamera$isThirdPerson(CallbackInfoReturnable<Boolean> cir) {
         if (CameraManager.INSTANCE.isCameraChanged()) {
-            cir.setReturnValue(CameraManager.INSTANCE.shouldRenderPlayer());
+            cir.setReturnValue(true);
         }
     }
 }
